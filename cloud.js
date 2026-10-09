@@ -12,7 +12,7 @@ db=fresh;localStorage.setItem('luminari.erp.v1',JSON.stringify(db));render();doc
 async function flush(){if(!user||loading||saving)return;saving=true;
 try{while(dirty){dirty=false;status('↻ Guardando cambios');
 for(const t of tables){const entries=db[t]||[],ids=new Set(entries.map(v=>String(v.id)));const removed=[...(baseline[t]||new Set())].filter(id=>!ids.has(id));for(const id of removed){const {error}=await client.from(t).delete().eq('id',id);if(error)throw error}
-for(const row of entries){const {error}=await client.from(t).upsert({id:String(row.id),owner_id:user.id,data:row},{onConflict:'id'});if(error)throw error}baseline[t]=ids}
+for(let i=0;i<entries.length;i+=150){const payload=entries.slice(i,i+150).map(row=>({id:String(row.id),owner_id:user.id,data:row}));const {error}=await client.from(t).upsert(payload,{onConflict:'id'});if(error)throw error}baseline[t]=ids}
 const {error}=await client.from('settings').upsert({owner_id:user.id,data:{goal:db.goal}},{onConflict:'owner_id'});if(error)throw error;
 }status('☁ Datos guardados')}catch(e){dirty=true;status('⚠ Error al sincronizar: '+e.message)}finally{saving=false}}
 window.cloudSync=()=>{if(!user||loading)return;dirty=true;clearTimeout(timer);timer=setTimeout(flush,500)};
