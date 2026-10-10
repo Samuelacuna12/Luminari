@@ -121,7 +121,7 @@ function clientsSalesPanel(){
 function monthlyClientsPanel(month){
  const orders=db.orders.filter(o=>String(o.date||'').startsWith(month)&&o.status!=='Cancelado');
  const groups=new Map();const clientsByName=new Map(db.clients.map(c=>[customerKey(c.name),c]));
- for(const o of orders){const key=customerKey(o.client)||'sin-cliente',g=groups.get(key)||{name:o.client||'Sin cliente',value:0,orders:[],client:clientsByName.get(key)};g.value+=Number(o.amount)||0;g.orders.push(o);groups.set(key,g)}
+ for(const o of orders){const key=customerKey(o.client)||'sin-cliente',g=groups.get(key)||{name:clientsByName.get(key)?.name||o.client||'Sin cliente',value:0,orders:[],client:clientsByName.get(key)};g.value+=Number(o.amount)||0;g.orders.push(o);groups.set(key,g)}
  const items=[...groups.values()].sort((a,b)=>b.value-a.value);
  const count=items.length,total=sum(orders,o=>o.amount);
  const rows=items.map(g=>'<tr><td><b>'+esc(g.name)+'</b></td><td>'+g.orders.length+'</td><td>'+esc(g.orders.map(o=>o.code||'Sin referencia').join(', '))+'</td><td><b>'+money(g.value)+'</b></td><td>'+badge(g.orders.every(o=>o.status==='Histórico sin validar')?'Histórico sin validar':g.orders.length===1?g.orders[0].status:'Varios estados')+'</td><td>'+(g.client?'<button class="btn light small" data-customer-id="'+esc(g.client.id)+'" onclick="clientSalesDetails(this.dataset.customerId)">Ver historial ↗</button>':'Sin ficha CRM')+'</td></tr>').join('');
