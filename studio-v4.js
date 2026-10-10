@@ -1,6 +1,7 @@
 /* LUMINARI native studio experience. Only fictional data are shown in the public preview. */
 (function(){
-const preview=typeof IS_DEMO!=='undefined'&&IS_DEMO;
+const preview=typeof IS_SAMPLE!=='undefined'&&IS_SAMPLE;
+const local=typeof IS_LOCAL!=='undefined'&&IS_LOCAL;
 const dateKey=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')};
 function studioDashboard(){
  const today=new Date(), period=dateKey();
@@ -36,24 +37,26 @@ function layout(){
  const t=top.querySelector('.topright');
  if(t){
   const privateMode=!preview;
-  t.innerHTML=privateMode?'<button class="studio-top-action soft" onclick="cloudImport()">Importar histórico</button><button class="studio-top-action" onclick="cloudLogout()">Salir ↗</button>':'<a class="studio-top-action" href="?app=1">Acceso privado ↗</a>';
+  t.innerHTML=privateMode?'<button class="studio-top-action soft" onclick="cloudImport()">Importar histórico</button><button class="studio-top-action" onclick="cloudLogout()">Salir ↗</button>':local?'<button class="studio-top-action soft" onclick="backup()">Descargar respaldo</button><button class="studio-top-action" onclick="go(\'reports\')">Informes ↗</button>':'<a class="studio-top-action" href="./">Usar sin clave ↗</a>';
  }
  let nav=document.getElementById('studioNavigation');
  if(!nav){
   nav=document.createElement('nav');nav.id='studioNavigation';nav.className='studio-nav';nav.setAttribute('aria-label','Secciones de Luminari');top.after(nav);
  }
  const tabs=[['dashboard','⌂','Estudio'],['quotes','▤','Cotizaciones'],['clients','♙','Clientes'],['orders','◈','Fabricación'],['inventory','◫','Inventario'],['transactions','↗','Finanzas'],['expenses','◷','Gastos fijos'],['shipments','⇄','Entregas'],['tasks','☑','Tareas'],['reports','▥','Informes']];
- nav.innerHTML=tabs.map(x=>'<button class="'+(page===x[0]?'current':'')+'" onclick="go(\''+x[0]+'\')"><b>'+x[1]+'</b>'+x[2]+'</button>').join('')+'<span class="studio-spacer"></span><span class="priv-tip">'+(preview?'EXPERIENCIA DE MUESTRA':'ÁREA PRIVADA')+'</span>';
+ nav.innerHTML=tabs.map(x=>'<button class="'+(page===x[0]?'current':'')+'" onclick="go(\''+x[0]+'\')"><b>'+x[1]+'</b>'+x[2]+'</button>').join('')+'<span class="studio-spacer"></span><span class="priv-tip">'+(preview?'DATOS DE EJEMPLO':local?'ACCESO LIBRE · GUARDADO LOCAL':'ÁREA PRIVADA')+'</span>';
  const main=document.getElementById('main');
- if(preview&&main&&!document.getElementById('sampleNote')){
-  main.insertAdjacentHTML('afterbegin','<div id="sampleNote" class="design-banner"><span>Vista del diseño · datos ficticios, sin acceso a tus clientes.</span><a href="?app=1">Entrar al sistema ↗</a></div>');
+ if(!privateMode&&main&&!document.getElementById('sampleNote')){
+  main.insertAdjacentHTML('afterbegin',preview?
+  '<div id="sampleNote" class="design-banner"><span>Ejemplo ficticio. Sin acceso a datos de clientes.</span><a href="./">Abrir sistema sin contraseña ↗</a></div>':
+  '<div id="sampleNote" class="design-banner"><span>Sistema sin inicio de sesión. Tus registros se guardan únicamente en este navegador, NO en Supabase. Descarga respaldos desde Informes.</span><a href="?demo=1">Ver ejemplo ↗</a></div>');
  }
- const footer=document.querySelector('.footer');if(footer)footer.textContent=preview?'LUMINARI · Vista visual de muestra — sin datos reales':'LUMINARI · Sistema privado con base de datos independiente';
+ const footer=document.querySelector('.footer');if(footer)footer.textContent=preview?'LUMINARI · Vista ficticia':local?'LUMINARI · Espacio de trabajo local, sin inicio de sesión ni sincronización':'LUMINARI · Sistema privado con base de datos independiente';
 }
 render=function(){renderBase();layout();};
 if(preview){
- // The preview never writes to the database. To create records, open the private application.
- const access=()=>{location.href='?app=1';};
+ // La muestra no escribe datos. Abre el espacio local para registrar información.
+ const access=()=>{location.href='./';};
  formEdit=access;quoteEdit=access;updateGoal=access;quoteSave=access;del=access;cloudImport=access;
 }
 render();
