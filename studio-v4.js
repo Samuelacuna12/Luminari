@@ -37,7 +37,7 @@ function layout(){
  const privateMode=!preview&&!local;
  const t=top.querySelector('.topright');
  if(t){
-  t.innerHTML=privateMode?'<span class="studio-top-action soft">☁ Base compartida</span><button class="studio-top-action" onclick="cloudLogout()">Cerrar sesión ↗</button>':local?'<button class="studio-top-action soft" onclick="backup()">Descargar respaldo</button><button class="studio-top-action" onclick="go(\'reports\')">Informes ↗</button>':'<a class="studio-top-action" href="./">Usar sin clave ↗</a>';
+  t.innerHTML=privateMode?'<span class="muted" id="today"></span><span class="studio-top-action soft">☁ Base compartida</span><button class="studio-top-action" onclick="cloudLogout()">Cerrar sesión ↗</button>':local?'<span class="muted" id="today"></span><button class="studio-top-action soft" onclick="backup()">Descargar respaldo</button><button class="studio-top-action" onclick="go(\'reports\')">Informes ↗</button>':'<span class="muted" id="today"></span><a class="studio-top-action" href="./">Usar sin clave ↗</a>';
  }
  let nav=document.getElementById('studioNavigation');
  if(!nav){
