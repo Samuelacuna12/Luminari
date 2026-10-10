@@ -37,7 +37,7 @@ function layout(){
  const privateMode=!preview&&!local;
  const t=top.querySelector('.topright');
  if(t){
-  t.innerHTML=privateMode?'<button class="studio-top-action soft" onclick="cloudImport()">Importar histórico</button><button class="studio-top-action" onclick="cloudLogout()">Salir ↗</button>':local?'<button class="studio-top-action soft" onclick="backup()">Descargar respaldo</button><button class="studio-top-action" onclick="go(\'reports\')">Informes ↗</button>':'<a class="studio-top-action" href="./">Usar sin clave ↗</a>';
+  t.innerHTML=privateMode?'<span class="studio-top-action soft">☁ Base compartida</span><button class="studio-top-action" onclick="cloudLogout()">Cerrar sesión ↗</button>':local?'<button class="studio-top-action soft" onclick="backup()">Descargar respaldo</button><button class="studio-top-action" onclick="go(\'reports\')">Informes ↗</button>':'<a class="studio-top-action" href="./">Usar sin clave ↗</a>';
  }
  let nav=document.getElementById('studioNavigation');
  if(!nav){
@@ -48,7 +48,7 @@ function layout(){
  const main=document.getElementById('main');
  if(!privateMode&&main&&!document.getElementById('sampleNote')){
   main.insertAdjacentHTML('afterbegin',preview?
-  '<div id="sampleNote" class="design-banner"><span>Ejemplo ficticio. Sin acceso a datos de clientes.</span><a href="./">Abrir sistema sin contraseña ↗</a></div>':
+  '<div id="sampleNote" class="design-banner"><span>Ejemplo ficticio. Sin acceso a datos de clientes.</span><a href="./">Abrir acceso privado ↗</a></div>':
   '<div id="sampleNote" class="design-banner"><span>Sistema sin inicio de sesión. Tus registros se guardan únicamente en este navegador, NO en Supabase. Descarga respaldos desde Informes.</span><a href="?demo=1">Ver ejemplo ↗</a></div>');
  }
  const footer=document.querySelector('.footer');if(footer)footer.textContent=preview?'LUMINARI · Vista ficticia':local?'LUMINARI · Espacio de trabajo local, sin inicio de sesión ni sincronización':'LUMINARI · Sistema privado con base de datos independiente';
