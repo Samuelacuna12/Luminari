@@ -1,35 +1,143 @@
-(function(){
-// La vista de demostración usa únicamente datos ficticios y no inicia sesión ni consulta Supabase.
-if(new URLSearchParams(location.search).get('secure')!=='1')return;
-const URL='https://kmylrayhpyrksprffeui.supabase.co',KEY='sb_publishable_KUjXR0KwvPLoYWqNHA3D4w_bM7ooNfN';
-const tables=['clients','quotes','orders','inventory','transactions','tasks','shipments','expenses'];
-let client,user=null,loading=false,saving=false,dirty=false,baseline={},timer;
-const el=id=>document.getElementById(id),status=s=>{el('syncStatus').textContent=s},note=s=>{el('authStatus').textContent=s};
-async function hydrate(u){loading=true;document.body.classList.remove('authorized');note('Cargando datos protegidos...');
-try{const fresh=blank();baseline={};
-for(const t of tables){const {data,error}=await client.from(t).select('id,data').order('created_at',{ascending:false}).limit(10000);if(error)throw error;fresh[t]=(data||[]).map(v=>({...v.data,id:v.id}));baseline[t]=new Set(fresh[t].map(v=>v.id))}
-const {data,error}=await client.from('settings').select('data').eq('owner_id',u.id).maybeSingle();if(error)throw error;fresh.goal=data?.data?.goal??fresh.goal;
-db=fresh;localStorage.setItem('luminari.erp.v1',JSON.stringify(db));render();document.body.classList.add('authorized');status('☁ Supabase conectado');note('');
-}catch(e){note('Error de conexión: '+e.message)}finally{loading=false}}
-async function flush(){if(!user||loading||saving)return;saving=true;
-try{while(dirty){dirty=false;status('↻ Guardando cambios');
-for(const t of tables){const entries=db[t]||[],ids=new Set(entries.map(v=>String(v.id)));const removed=[...(baseline[t]||new Set())].filter(id=>!ids.has(id));for(const id of removed){const {error}=await client.from(t).delete().eq('id',id);if(error)throw error}
-for(let i=0;i<entries.length;i+=150){const payload=entries.slice(i,i+150).map(row=>({id:String(row.id),owner_id:user.id,data:row}));const {error}=await client.from(t).upsert(payload,{onConflict:'id'});if(error)throw error}baseline[t]=ids}
-const {error}=await client.from('settings').upsert({owner_id:user.id,data:{goal:db.goal}},{onConflict:'owner_id'});if(error)throw error;
-}status('☁ Datos guardados')}catch(e){dirty=true;status('⚠ Error al sincronizar: '+e.message)}finally{saving=false}}
-window.cloudSync=()=>{if(!user||loading)return;dirty=true;clearTimeout(timer);timer=setTimeout(flush,500)};
-window.cloudLogout=async()=>{await client.auth.signOut();};
-window.cloudImport=async()=>{
-if(!user)return alert('Inicia sesión primero.');
-let input=document.createElement('input');input.type='file';input.accept='.json,application/json';input.onchange=()=>{let file=input.files[0];if(!file)return;let rd=new FileReader();rd.onload=()=>{try{let payload=JSON.parse(rd.result);if(!tables.every(t=>Array.isArray(payload[t])))throw Error('Formato no reconocido');if(!confirm('Esto incorporará los datos históricos del archivo a esta cuenta de LUMINARI, evitando IDs duplicados. ¿Continuar?'))return;
-for(const t of tables){const map=new Map(db[t].map(r=>[r.id,r]));for(const r of payload[t])if(!map.has(r.id))map.set(r.id,r);db[t]=[...map.values()]}
-save();render();alert('Importación recibida. Comprueba el indicador de sincronización hasta que indique Datos guardados.')}catch(e){alert('Importación rechazada: '+e.message)}};rd.readAsText(file)};input.click()};
-document.addEventListener('DOMContentLoaded',async()=>{
-if(!window.supabase?.createClient){note('No cargó Supabase JS. Comprueba tu conexión.');return}
-client=window.supabase.createClient(URL,KEY);
-el('authForm').addEventListener('submit',async ev=>{ev.preventDefault();note('Validando credenciales...');const {error}=await client.auth.signInWithPassword({email:el('authEmail').value,password:el('authPass').value});if(error)note(error.message)});
-el('signup').onclick=async()=>{const email=el('authEmail').value,password=el('authPass').value;if(!email||password.length<6)return note('Correo y contraseña de 6 caracteres mínimo.');note('Registrando cuenta...');const {data,error}=await client.auth.signUp({email,password});note(error?error.message:data.session?'Sesión iniciada.':'Confirma tu correo electrónico y luego inicia sesión.')};
-client.auth.onAuthStateChange((event,session)=>{if(session?.user&&session.user.id!==user?.id){user=session.user;setTimeout(()=>hydrate(user),0)}else if(!session){user=null;document.body.classList.remove('authorized');note('Accede con tu correo y contraseña.')}});
-const {data}=await client.auth.getSession();if(!data.session)note('Accede con tu correo y contraseña.');
-});
+/* LUMINARI: private shared team workspace in a dedicated Supabase project */
+(function () {
+  if (typeof PRIVATE_MODE === "undefined" || !PRIVATE_MODE) return;
+  const SB_URL="https://kmylrayhpyrksprffeui.supabase.co";
+  const SB_KEY="sb_publishable_KUjXR0KwvPLoYWqNHA3D4w_bM7ooNfN";
+  const TABLES=["clients","quotes","orders","inventory","transactions","tasks","shipments","expenses"];
+  const ALLOWED=new Set(["admin@luminari.com","gerson@luminari.com","omar@luminari.com","karen@luminari.com"]);
+  let client,user=null,loading=false,saving=false,queued=false,baseline={},timer=null,mode="activate";
+  const el=id=>document.getElementById(id);
+  const note=msg=>{if(el("authStatus"))el("authStatus").textContent=msg;};
+  const status=msg=>{if(el("syncStatus"))el("syncStatus").textContent=msg;};
+  const fingerprint=row=>JSON.stringify(row);
+  async function codeHash(code) {
+    const bytes=new TextEncoder().encode(code.trim().toUpperCase());
+    const digest=await crypto.subtle.digest("SHA-256",bytes);
+    return Array.from(new Uint8Array(digest),n=>n.toString(16).padStart(2,"0")).join("");
+  }
+  function authMode(next) {
+    mode=next;
+    el("authTitle").textContent=next==="activate"?"Activa tu acceso a LUMINARI":"Ingresa a LUMINARI";
+    el("authInstruction").textContent=next==="activate"
+      ?"Crea una clave segura que no se te olvide nunca. Es personal y la usarás cada vez que ingreses."
+      :"Ingresa con tu correo de LUMINARI y la contraseña que elegiste.";
+    el("activationWrap").style.display=next==="activate"?"block":"none";
+    el("activationCode").required=next==="activate";
+    el("authPass").minLength=next==="activate"?12:6;
+    el("authPass").autocomplete=next==="activate"?"new-password":"current-password";
+    el("authSubmit").textContent=next==="activate"?"Crear mi contraseña y activar acceso":"Iniciar sesión";
+    el("authModeToggle").textContent=next==="activate"?"Ya tengo contraseña · Iniciar sesión":"Primera vez · Crear mi contraseña";
+    note("");
+  }
+  async function loadTable(table) {
+    const result=[];
+    for(let offset=0;offset<20000;offset+=1000){
+      const {data,error}=await client.from(table).select("id,data").order("created_at",{ascending:false}).range(offset,offset+999);
+      if(error)throw error;
+      for(const row of data||[])result.push({...row.data,id:String(row.id)});
+      if((data||[]).length<1000)break;
+    }
+    return result;
+  }
+  async function hydrate(person) {
+    loading=true;
+    document.body.classList.remove("authorized");
+    note("Cargando la información real de LUMINARI...");
+    try{
+      // Confirm membership server-side. RLS provides final enforcement on each table.
+      const {data:allowed,error:memberError}=await client.rpc("is_luminari_member");
+      if(memberError)throw Error("Falta instalar la configuración del equipo en Supabase.");
+      if(!allowed)throw Error("La cuenta aún no está autorizada para el equipo LUMINARI.");
+      const next=blank(),snap={};
+      for(const table of TABLES){
+        next[table]=await loadTable(table);
+        snap[table]=new Map(next[table].map(row=>[String(row.id),fingerprint(row)]));
+      }
+      const {data:config,error:cfgError}=await client.from("luminari_config").select("data").eq("name","business").maybeSingle();
+      if(cfgError)throw cfgError;
+      next.goal=Number(config?.data?.goal)||30000000;
+      db=next;baseline=snap;
+      render();
+      document.body.classList.add("authorized");
+      status("☁ Sincronizado con Supabase");
+      note("");
+    }catch(err){
+      status("⚠ Error al cargar Supabase");
+      note("No se pudo abrir la base compartida: "+err.message);
+    }finally{loading=false;}
+  }
+  async function flush(){
+    if(!user||loading||saving)return;
+    saving=true;
+    try{
+      while(queued){
+        queued=false;
+        status("↻ Guardando cambios en Supabase...");
+        for(const table of TABLES){
+          const records=db[table]||[],old=baseline[table]||new Map();
+          const current=new Map(records.map(r=>[String(r.id),fingerprint(r)]));
+          const changes=records.filter(r=>old.get(String(r.id))!==current.get(String(r.id)));
+          const deletions=[...old.keys()].filter(id=>!current.has(id));
+          for(let i=0;i<changes.length;i+=100){
+            const items=changes.slice(i,i+100).map(r=>({id:String(r.id),owner_id:user.id,data:r}));
+            const {error}=await client.from(table).upsert(items,{onConflict:"id"});
+            if(error)throw error;
+          }
+          for(const id of deletions){
+            const {error}=await client.from(table).delete().eq("id",id);
+            if(error)throw error;
+          }
+          baseline[table]=current;
+        }
+        const {error}=await client.from("luminari_config").upsert({name:"business",data:{goal:db.goal},updated_at:new Date().toISOString()},{onConflict:"name"});
+        if(error)throw error;
+      }
+      status("☁ Guardado en Supabase");
+    }catch(err){
+      queued=true;
+      status("⚠ No se guardaron los cambios: "+err.message);
+    }finally{saving=false;}
+  }
+  window.cloudSync=()=>{if(!user||loading)return;queued=true;clearTimeout(timer);timer=setTimeout(flush,400);};
+  window.cloudLogout=async()=>{if(client)await client.auth.signOut();};
+  window.cloudImport=()=>alert("El historial se carga desde Supabase automáticamente cuando está instalada la configuración del equipo.");
+  document.addEventListener("DOMContentLoaded",async()=>{
+    if(!window.supabase?.createClient){note("No se pudo iniciar Supabase. Revisa tu conexión.");return;}
+    client=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
+    authMode("activate");
+    el("authModeToggle").addEventListener("click",()=>authMode(mode==="activate"?"login":"activate"));
+    el("authForm").addEventListener("submit",async event=>{
+      event.preventDefault();
+      const email=el("authEmail").value.trim().toLowerCase();
+      const password=el("authPass").value;
+      if(!ALLOWED.has(email)){note("Este correo no está autorizado para LUMINARI.");return;}
+      el("authSubmit").disabled=true;
+      try{
+        if(mode==="activate"){
+          const code=el("activationCode").value.toUpperCase().trim();
+          if(!/^[A-Z2-9]{5}(?:-[A-Z2-9]{5}){3}$/.test(code))throw Error("Introduce el código de activación individual completo.");
+          if(password.length<12||!/[A-Z]/.test(password)||!/[a-z]/.test(password)||!/[0-9]/.test(password))throw Error("La clave requiere al menos 12 caracteres, una mayúscula, una minúscula y un número.");
+          note("Registrando tu acceso...");
+          const hash=await codeHash(code);
+          const {data,error}=await client.auth.signUp({email,password,options:{data:{activation_hash:hash}}});
+          if(error)throw error;
+          if(!data.session)note("Supabase solicita confirmar el correo. El administrador debe desactivar «Confirm email» en Authentication → Providers → Email del proyecto LUMINARI.");
+          else note("Cuenta creada. Cargando la información compartida...");
+        }else{
+          note("Iniciando sesión...");
+          const {error}=await client.auth.signInWithPassword({email,password});
+          if(error)throw error;
+        }
+      }catch(err){
+        note("No fue posible ingresar: "+err.message);
+      }finally{el("authSubmit").disabled=false;}
+    });
+    client.auth.onAuthStateChange((event,session)=>{
+      if(session?.user&&session.user.id!==user?.id){user=session.user;setTimeout(()=>hydrate(user),0);}
+      if(!session){user=null;document.body.classList.remove("authorized");if(event==="SIGNED_OUT")note("Sesión cerrada.");}
+    });
+    const {data,error}=await client.auth.getSession();
+    if(error)note("Error de sesión: "+error.message);
+    else if(!data.session)note("Usa tu código individual para activar la cuenta o entra con tu contraseña.");
+  });
 })();
