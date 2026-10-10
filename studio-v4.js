@@ -36,7 +36,7 @@ function layout(){
  }
  const t=top.querySelector('.topright');
  if(t){
-  const privateMode=!preview;
+  const privateMode=!preview&&!local;
   t.innerHTML=privateMode?'<button class="studio-top-action soft" onclick="cloudImport()">Importar histórico</button><button class="studio-top-action" onclick="cloudLogout()">Salir ↗</button>':local?'<button class="studio-top-action soft" onclick="backup()">Descargar respaldo</button><button class="studio-top-action" onclick="go(\'reports\')">Informes ↗</button>':'<a class="studio-top-action" href="./">Usar sin clave ↗</a>';
  }
  let nav=document.getElementById('studioNavigation');
