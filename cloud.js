@@ -117,6 +117,9 @@
           const code=el("activationCode").value.toUpperCase().trim();
           if(!/^[A-Z2-9]{5}(?:-[A-Z2-9]{5}){3}$/.test(code))throw Error("Introduce el código de activación individual completo.");
           if(password.length<12||!/[A-Z]/.test(password)||!/[a-z]/.test(password)||!/[0-9]/.test(password))throw Error("La clave requiere al menos 12 caracteres, una mayúscula, una minúscula y un número.");
+          note("Comprobando que LUMINARI esté configurado...");
+          const setup=await client.rpc("luminari_signup_ready");
+          if(setup.error||setup.data!==true)throw Error("Falta instalar la configuración inicial de usuarios en Supabase. La cuenta no se ha creado.");
           note("Registrando tu acceso...");
           const hash=await codeHash(code);
           const {data,error}=await client.auth.signUp({email,password,options:{data:{activation_hash:hash}}});
