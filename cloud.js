@@ -1,4 +1,6 @@
 (function(){
+// La vista de demostración usa únicamente datos ficticios y no inicia sesión ni consulta Supabase.
+if(new URLSearchParams(location.search).get('demo')==='1')return;
 const URL='https://kmylrayhpyrksprffeui.supabase.co',KEY='sb_publishable_KUjXR0KwvPLoYWqNHA3D4w_bM7ooNfN';
 const tables=['clients','quotes','orders','inventory','transactions','tasks','shipments','expenses'];
 let client,user=null,loading=false,saving=false,dirty=false,baseline={},timer;
