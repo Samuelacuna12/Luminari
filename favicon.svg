@@ -1,18 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="LUMINARI">
-  <defs>
-    <radialGradient id="glow" cx="50%" cy="45%" r="64%">
-      <stop offset="0" stop-color="#5c4b32"/>
-      <stop offset=".55" stop-color="#2c2924"/>
-      <stop offset="1" stop-color="#171918"/>
-    </radialGradient>
-    <linearGradient id="light" x1="10%" y1="5%" x2="95%" y2="96%">
-      <stop offset="0" stop-color="#fff9e9"/>
-      <stop offset=".45" stop-color="#f3d8a6"/>
-      <stop offset="1" stop-color="#ba8d55"/>
-    </linearGradient>
-  </defs>
-  <rect width="64" height="64" rx="15" fill="#171918"/>
-  <rect x="2" y="2" width="60" height="60" rx="13" fill="url(#glow)" stroke="#8a7150" stroke-opacity=".5"/>
-  <path d="M32 7C34.2 21.8 42.2 29.8 57 32C42.2 34.2 34.2 42.2 32 57C29.8 42.2 21.8 34.2 7 32C21.8 29.8 29.8 21.8 32 7Z" fill="url(#light)"/>
-  <circle cx="32" cy="32" r="5.5" fill="#fff6db"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 225 225" role="img" aria-label="LUMINARI, logo oficial">
+ <rect width="225" height="225" fill="#f8e1ad"/>
+ <path d="M26 214V62H203V214H26" fill="none" stroke="#11110f" stroke-width="4.6" stroke-linejoin="miter"/>
+ <g fill="none" stroke="#11110f" stroke-width="3.7" stroke-linejoin="miter" stroke-linecap="square">
+  <path d="M44 9V48H71"/>
+  <path d="M78 9V35C78 46 84 49 94 49C104 49 110 44 110 35V9"/>
+  <path d="M122 49V9L143 40L164 9V49"/>
+  <path d="M183 9V49"/>
+  <path d="M41 115V77L76 115V77"/>
+  <path d="M91 115L106 77L123 115M97 102H118"/>
+  <path d="M138 115V77H157C178 77 179 97 156 97H138M156 97L175 115"/>
+  <path d="M191 77V115"/>
+ </g>
+ <path d="M178 117h6v15h-6Z" fill="#ffdb59"/>
+ <g fill="#fff" stroke="#121210" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M155 151c-10.5 0-19.2 8.8-19.2 20v5.3c0 3.4 1.3 6.8 4 9.2h30.4c2.6-2.4 3.9-5.8 3.9-9.2V171c0-11.2-8.5-20-19.1-20Z"/>
+  <path d="M139 186h32c1 0 1.5 1 1.5 2v2h-35v-2c0-1 1-2 1.5-2Z"/>
+ </g>
+ <g fill="none" stroke="#121210" stroke-width="2.4" stroke-linecap="round">
+  <path d="m143 192-7 17m27-17 7 17m-21-17-3 12"/>
+ </g>
 </svg>
