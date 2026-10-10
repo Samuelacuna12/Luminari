@@ -34,9 +34,9 @@ function layout(){
  if(!brand){
   top.insertAdjacentHTML('afterbegin','<div class="studio-brand" id="studioBrand"><span class="studio-mark">✳</span><span><strong>LUMINARI</strong><small>STUDIO OPERATIONS</small></span></div>');
  }
+ const privateMode=!preview&&!local;
  const t=top.querySelector('.topright');
  if(t){
-  const privateMode=!preview&&!local;
   t.innerHTML=privateMode?'<button class="studio-top-action soft" onclick="cloudImport()">Importar histórico</button><button class="studio-top-action" onclick="cloudLogout()">Salir ↗</button>':local?'<button class="studio-top-action soft" onclick="backup()">Descargar respaldo</button><button class="studio-top-action" onclick="go(\'reports\')">Informes ↗</button>':'<a class="studio-top-action" href="./">Usar sin clave ↗</a>';
  }
  let nav=document.getElementById('studioNavigation');
