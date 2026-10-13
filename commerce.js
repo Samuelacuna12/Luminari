@@ -39,7 +39,7 @@
       html+='<div class="lum-meta">'+
         '<label>Fecha real de compra<input type="date" class="sale-date" value="'+esc(x.date||now())+'"></label>'+
         '<label>Abono recibido (COP)<input type="number" class="sale-paid" min="0" step="any" value="'+esc(x.paid??0)+'"></label>'+
-        '<label>Estado<select class="sale-status">'+['Pendiente','En fabricación','Terminado','Enviado','Entregado','Cancelado'].map(s=>'<option '+(s===(x.status||'Entregado')?'selected':'')+'>'+s+'</option>').join('')+'</select></label>'+
+        '<label>Estado<select class="sale-status">'+['Pendiente','En fabricación','Terminado','Enviado','Entregado','Cancelado'].map(s=>'<option '+(s===(x.status||'Pendiente')?'selected':'')+'>'+s+'</option>').join('')+'</select></label>'+
         '</div>';
    }
    html+='</div>';
@@ -93,7 +93,7 @@
    if(!Number.isFinite(paid)||paid<0||paid>total)throw Error('El abono no puede ser negativo ni superar el valor de compra.');
    return {id:uid(),code:'LUM-'+Date.now().toString(36).toUpperCase(),client:client.name,clientId:client.id,
      phone:client.phone||'',date:date,due:'',amount:total,paid:paid,cost:0,
-     status:root.querySelector('.sale-status')?.value||'Entregado',
+     status:root.querySelector('.sale-status')?.value||'Pendiente',
      product:lines.map(x=>x.description).join(', '),items:lines,notes:'Compra registrada desde Clientes CRM'};
  }
  let saleBusy=false;
