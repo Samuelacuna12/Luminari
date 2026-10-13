@@ -44,7 +44,7 @@ function layout(){
  if(!nav){
   nav=document.createElement('nav');nav.id='studioNavigation';nav.className='studio-nav';nav.setAttribute('aria-label','Secciones de Luminari');top.after(nav);
  }
- const tabs=[['dashboard','⌂','Estudio'],['quotes','▤','Cotizaciones'],['clients','♙','Clientes'],['orders','◈','Fabricación'],['inventory','◫','Inventario'],['transactions','↗','Finanzas'],['expenses','◷','Gastos fijos'],['shipments','⇄','Entregas'],['tasks','☑','Tareas'],['reports','▥','Informes']];
+ const tabs=[['dashboard','⌂','Estudio'],['quotes','▤','Cotizaciones'],['clients','♙','Clientes'],['orders','◈','Fabricación'],['products','✳','Productos'],['inventory','◫','Inventario'],['transactions','↗','Finanzas'],['expenses','◷','Gastos fijos'],['shipments','⇄','Entregas'],['tasks','☑','Tareas'],['reports','▥','Informes']];
  nav.innerHTML=tabs.map(x=>'<button class="'+(page===x[0]?'current':'')+'" onclick="go(\''+x[0]+'\')"><b>'+x[1]+'</b>'+x[2]+'</button>').join('')+'<span class="studio-spacer"></span><span class="priv-tip">'+(preview?'DATOS DE EJEMPLO':local?'ACCESO LIBRE · GUARDADO LOCAL':'ÁREA PRIVADA')+'</span>';
  const main=document.getElementById('main');
  if(!privateMode&&main&&!document.getElementById('sampleNote')){
