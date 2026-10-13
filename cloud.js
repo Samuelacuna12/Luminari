@@ -3,7 +3,7 @@
   if (typeof PRIVATE_MODE === "undefined" || !PRIVATE_MODE) return;
   const SB_URL="https://kmylrayhpyrksprffeui.supabase.co";
   const SB_KEY="sb_publishable_KUjXR0KwvPLoYWqNHA3D4w_bM7ooNfN";
-  const TABLES=["clients","quotes","orders","inventory","transactions","tasks","shipments","expenses"];
+  const TABLES=["clients","quotes","inventory","products","orders","transactions","tasks","shipments","expenses"];
   const ALLOWED=new Set(["admin@luminari.com","gerson@luminari.com","omar@luminari.com","karen@luminari.com"]);
   let client,user=null,loading=false,saving=false,queued=false,baseline={},timer=null,mode="activate";
   const el=id=>document.getElementById(id);
@@ -98,6 +98,74 @@
       status("⚠ No se guardaron los cambios: "+err.message);
     }finally{saving=false;}
   }
+
+  // Direct commits surface SQL/stock errors to the form and refresh snapshots.
+  async function settlePending(){
+    if(loading||!user)throw Error("Inicia sesión y carga los datos de LUMINARI.");
+    if(saving)throw Error("Hay un guardado en curso. Revisa el estado y repite la acción.");
+    if(queued){
+      clearTimeout(timer);
+      await flush();
+      if(queued)throw Error("Hay cambios pendientes que aún no se han sincronizado.");
+    }
+  }
+  async function refreshCollections(names){
+    for(const table of names){
+      const rows=await loadTable(table);
+      db[table]=rows;
+      baseline[table]=new Map(rows.map(row=>[String(row.id),fingerprint(row)]));
+    }
+    render();
+  }
+  window.cloudRecordClientSale=async(customer,sale)=>{
+    await settlePending();
+    saving=true;
+    status("↻ Registrando cliente, venta y consumo...");
+    try{
+      const {error}=await client.rpc("luminari_record_client_sale",{p_client:customer,p_order:sale});
+      if(error)throw error;
+      await refreshCollections(["clients","orders","products","inventory"]);
+      status("☁ Compra e inventario guardados en Supabase");
+    }catch(error){
+      status("⚠ No se guardó la compra: "+error.message);
+      throw error;
+    }finally{saving=false;}
+  };
+  window.cloudRecordOrder=async(order)=>{
+    await settlePending();
+    saving=true;
+    status("↻ Registrando pedido y consumo...");
+    try{
+      const {error}=await client.from("orders").upsert({
+        id:String(order.id),owner_id:user.id,data:order
+      },{onConflict:"id"});
+      if(error)throw error;
+      await refreshCollections(["orders","products","inventory"]);
+      status("☁ Pedido e inventario sincronizados");
+    }catch(error){
+      status("⚠ No se guardó el pedido: "+error.message);
+      throw error;
+    }finally{saving=false;}
+  };
+  window.cloudDeleteOrder=async(id)=>{
+    await settlePending();
+    saving=true;
+    status("↻ Eliminando pedido y reponiendo existencias...");
+    try{
+      const {error}=await client.from("orders").delete().eq("id",String(id));
+      if(error)throw error;
+      await refreshCollections(["orders","products","inventory"]);
+      status("☁ Pedido eliminado; existencias actualizadas");
+    }catch(error){
+      status("⚠ No se eliminó el pedido: "+error.message);
+      throw error;
+    }finally{saving=false;}
+  };
+  // Al volver a la pestaña, consultar el stock compartido de otros miembros del equipo.
+  document.addEventListener("visibilitychange",()=>{
+    if(document.visibilityState!=="visible"||!user||loading||saving||queued||el("modal")?.open)return;
+    refreshCollections(["products","inventory","orders"]).catch(err=>status("⚠ No se pudieron actualizar las existencias: "+err.message));
+  });
   window.cloudSync=()=>{if(!user||loading)return;queued=true;clearTimeout(timer);timer=setTimeout(flush,400);};
   window.cloudLogout=async()=>{if(client)await client.auth.signOut();};
   window.cloudImport=()=>alert("El historial se carga desde Supabase automáticamente cuando está instalada la configuración del equipo.");
