@@ -66,7 +66,7 @@ const IS_LOCAL=!PRIVATE_MODE&&!IS_SAMPLE;
 const IS_DEMO=!PRIVATE_MODE;
 document.body.classList.toggle('private-auth',PRIVATE_MODE);
 const KEY=PRIVATE_MODE?'luminari.erp.v1':'luminari.local.workspace.v1',now=()=>new Date().toISOString().slice(0,10),money=v=>new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(Number(v)||0),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])), uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-const blank=()=>({clients:[],quotes:[],orders:[],inventory:[],transactions:[],tasks:[],shipments:[],expenses:[],goal:30000000});
+const blank=()=>({clients:[],quotes:[],orders:[],inventory:[],products:[],transactions:[],tasks:[],shipments:[],expenses:[],goal:30000000});
 let db;try{db={...blank(),...JSON.parse(localStorage.getItem(KEY)||'{}')}}catch{db=blank()}
 if(IS_SAMPLE){
  db={...blank(),goal:40000000,
@@ -172,4 +172,4 @@ if(!PRIVATE_MODE){
 }
 
 function togglePasswordVisibility(){const field=document.getElementById("authPass");const button=document.getElementById("passwordEye");const label=document.getElementById("passwordEyeText");if(!field||!button)return;const show=field.type==="password";field.type=show?"text":"password";button.setAttribute("aria-pressed",String(show));button.setAttribute("aria-label",show?"Ocultar contraseña":"Mostrar contraseña");button.title=show?"Ocultar contraseña":"Mostrar contraseña";if(label)label.textContent=show?"Ocultar":"Ver";}
-</script><script src="./studio-ui.js?v=3.2"></script><script src="./studio-v4.js?v=6.9"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script><script src="./cloud.js?v=6.6"></script></body></html>
+</script><script src="./studio-ui.js?v=3.2"></script><script src="./studio-v4.js?v=6.9"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script><script src="./commerce.js?v=1.0"></script><script src="./cloud.js?v=7.0"></script></body></html>
